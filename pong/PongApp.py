@@ -1,7 +1,12 @@
+import random
+
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import NumericProperty, ReferenceListProperty,\
-    ObjectProperty
+from kivy.properties import (
+    NumericProperty,
+    ReferenceListProperty,
+    ObjectProperty,
+)
 from kivy.vector import Vector
 from kivy.clock import Clock
 
@@ -11,11 +16,9 @@ class PongPaddle(Widget):
 
     def bounce_ball(self, ball):
         if self.collide_widget(ball):
-            vx, vy = ball.velocity
-            offset = (ball.center_y - self.center_y) / (self.height / 2)
-            bounced = Vector(-1 * vx, vy)
-            vel = bounced * 1.1
-            ball.velocity = vel.x, vel.y + offset
+            speedup = 1.1
+            offset = 0.02 * Vector(0, ball.center_y - self.center_y)
+            ball.velocity = speedup * (offset - Vector(*ball.velocity))
 
 
 class PongBall(Widget):
@@ -32,28 +35,35 @@ class PongGame(Widget):
     player1 = ObjectProperty(None)
     player2 = ObjectProperty(None)
 
-    def serve_ball(self, vel=(4, 0)):
+    def serve_ball(self, vel=None):
+        """Reset ball to centre and launch with a random-ish velocity."""
         self.ball.center = self.center
+        if vel is None:
+            direction = random.choice([-1, 1])
+            vel = (direction * 4, random.uniform(-3, 3))
         self.ball.velocity = vel
 
     def update(self, dt):
         self.ball.move()
 
-        # bounce of paddles
-        self.player1.bounce_ball(self.ball)
-        self.player2.bounce_ball(self.ball)
-
-        # bounce ball off bottom or top
-        if (self.ball.y < self.y) or (self.ball.top > self.top):
+        # bounce ball off top / bottom
+        if self.ball.y < 0 or self.ball.top > self.height:
             self.ball.velocity_y *= -1
 
-        # went of to a side to score point?
-        if self.ball.x < self.x:
+        # scored past the left edge → point for player 2
+        if self.ball.right < self.x:
             self.player2.score += 1
-            self.serve_ball(vel=(4, 0))
+            self.serve_ball()
+
+        # scored past the right edge → point for player 1
         if self.ball.x > self.width:
             self.player1.score += 1
-            self.serve_ball(vel=(-4, 0))
+            self.serve_ball()
+
+        # bounce off paddles (checked after boundary so a reset
+        # doesn't immediately collide with a paddle)
+        self.player1.bounce_ball(self.ball)
+        self.player2.bounce_ball(self.ball)
 
     def on_touch_move(self, touch):
         if touch.x < self.width / 3:
@@ -70,5 +80,5 @@ class PongApp(App):
         return game
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     PongApp().run()
