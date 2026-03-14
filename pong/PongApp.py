@@ -1,7 +1,12 @@
+from random import randint
+
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import NumericProperty, ReferenceListProperty,\
-    ObjectProperty
+from kivy.properties import (
+    NumericProperty,
+    ReferenceListProperty,
+    ObjectProperty,
+)
 from kivy.vector import Vector
 from kivy.clock import Clock
 
@@ -39,7 +44,7 @@ class PongGame(Widget):
     def update(self, dt):
         self.ball.move()
 
-        # bounce of paddles
+        # bounce off paddles
         self.player1.bounce_ball(self.ball)
         self.player2.bounce_ball(self.ball)
 
@@ -47,13 +52,13 @@ class PongGame(Widget):
         if (self.ball.y < self.y) or (self.ball.top > self.top):
             self.ball.velocity_y *= -1
 
-        # went of to a side to score point?
-        if self.ball.x < self.x:
+        # score when ball passes a side
+        if self.ball.right < self.x:
             self.player2.score += 1
-            self.serve_ball(vel=(4, 0))
+            self.serve_ball(vel=(4, randint(-3, 3)))
         if self.ball.x > self.width:
             self.player1.score += 1
-            self.serve_ball(vel=(-4, 0))
+            self.serve_ball(vel=(-4, randint(-3, 3)))
 
     def on_touch_move(self, touch):
         if touch.x < self.width / 3:
@@ -70,5 +75,5 @@ class PongApp(App):
         return game
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     PongApp().run()
